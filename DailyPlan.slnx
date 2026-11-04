@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DailyPlan.App/DailyPlan.App.csproj" />
+    <Project Path="src/DailyPlan.Client/DailyPlan.Client.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DailyPlan.Client.Tests/DailyPlan.Client.Tests.csproj" />
+  </Folder>
+</Solution>

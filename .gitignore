@@ -1,0 +1,25 @@
+# Local toolchains (downloaded by scripts/setup-toolchain.ps1)
+.tools/
+
+# Build output
+build/
+artifacts/
+bin/
+obj/
+*.user
+*.suo
+
+# IDE
+.vs/
+.idea/
+.vscode/
+
+# Runtime data / local databases
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
