@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>DailyPlan.App</RootNamespace>
     <AssemblyName>DailyPlan</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -13,10 +14,18 @@
     <Product>每天计划</Product>
     <AssemblyTitle>每天计划</AssemblyTitle>
     <Version>1.1.0</Version>
+    <!-- WFO0003：DPI 由 app.manifest 的 PerMonitorV2 控制（WPF 的正确方式），与 WinForms 无关 -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Speech" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 托盘图标需要 WinForms 的 NotifyIcon，但不用它的隐式全局 using，避免与 WPF 类型重名冲突 -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
   </ItemGroup>
 
   <ItemGroup>

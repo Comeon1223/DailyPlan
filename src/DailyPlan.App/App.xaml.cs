@@ -44,7 +44,7 @@ public partial class App : Application
         e.Handled = true;
     }
 
-    private static void TryLog(Exception exception)
+    internal static void TryLog(Exception exception)
     {
         try
         {

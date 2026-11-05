@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -20,9 +21,13 @@ public partial class MainWindow : Window
     private readonly AppSettings _settings;
     private readonly SpeechService _speech;
     private readonly DispatcherTimer _reminderTimer;
+    private readonly TrayIconService _tray;
+    private readonly NotificationPopup _notificationPopup = new();
 
     private bool _suppressVoiceToggle;
     private bool _syncingCalendar;
+    private bool _exiting;
+    private bool _trayHintShown;
     private DateTime _lastReminderErrorAt = DateTime.MinValue;
 
     public MainWindow()
@@ -45,8 +50,64 @@ public partial class MainWindow : Window
         ConfigureVoice();
         UpdateVoiceIndicators();
 
+        _tray = new TrayIconService(this, RequestExit);
+        Application.Current.SessionEnding += (_, _) => _exiting = true;
+
         Loaded += MainWindow_Loaded;
         Closed += MainWindow_Closed;
+    }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        // 常驻托盘：关闭按钮只是隐藏窗口，应用继续在托盘运行，提醒不中断。
+        if (!_exiting)
+        {
+            e.Cancel = true;
+            HideToTray();
+            return;
+        }
+
+        base.OnClosing(e);
+    }
+
+    protected override void OnStateChanged(EventArgs e)
+    {
+        if (!_exiting && WindowState == WindowState.Minimized)
+        {
+            HideToTray();
+            return;
+        }
+
+        base.OnStateChanged(e);
+    }
+
+    private void HideToTray()
+    {
+        Hide();
+        if (!_trayHintShown)
+        {
+            _trayHintShown = true;
+            ShowNotification("每天计划", "已最小化到系统托盘，提醒仍会继续。\n点击托盘图标可重新打开主界面。");
+        }
+    }
+
+    private void RequestExit()
+    {
+        _exiting = true;
+        _tray.Dispose();
+        Application.Current.Shutdown();
+    }
+
+    private void ShowNotification(string title, string message)
+    {
+        try
+        {
+            _notificationPopup.Show(title, message);
+        }
+        catch (Exception exception)
+        {
+            App.TryLog(exception);
+        }
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -74,6 +135,8 @@ public partial class MainWindow : Window
         _reminderTimer.Stop();
         _speech.Dispose();
         _core.Dispose();
+        _tray.Dispose();
+        _notificationPopup.Close();
     }
 
     private void ReminderTimer_Tick(object? sender, EventArgs e) => PollReminders();
@@ -92,7 +155,14 @@ public partial class MainWindow : Window
             }
 
             var messages = reminders.Select(BuildReminderMessage).ToList();
-            ShowToast(string.Join(Environment.NewLine, messages));
+            if (IsVisible)
+            {
+                ShowToast(string.Join(Environment.NewLine, messages));
+            }
+            else
+            {
+                ShowNotification("任务提醒", string.Join(Environment.NewLine, messages));
+            }
 
             if (_settings.VoiceEnabled && _speech.IsAvailable)
             {
